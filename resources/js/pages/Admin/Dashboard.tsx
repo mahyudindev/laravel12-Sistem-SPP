@@ -55,40 +55,24 @@ export default function AdminDashboard({ user, role, stats, latestPayments }: { 
 
     const persentaseLunas = _stats.totalSiswa > 0 ? Math.round((_stats.siswaLunas / _stats.totalSiswa) * 100) : 0;
 
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
     const getMonthlyData = () => {
+        // If we have actual data from the database, use it
         if (_stats.monthlyData && _stats.monthlyData.length > 0) {
-            return _stats.monthlyData;
+            // Filter dan urutkan agar selalu Januari-Desember
+            const monthOrder = months;
+            return monthOrder
+                .map(m => _stats.monthlyData.find(item => item.month === m) || { month: m, total: _stats.totalSiswa || 0, lunas: 0, ppdb: 0 });
         }
-
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-        return months.map((month, index) => {
-            const isPastMonth = index <= 3; 
-            const isFutureMonth = index > 3;
-
-            let lunasRatio;
-            if (isPastMonth) {
-
-                const patterns = [0.5, 0.7, 0.9, 0.7];
-                lunasRatio = patterns[index % patterns.length];
-            } else if (isFutureMonth) {
-
-                lunasRatio = 0;
-            } else {
-
-                lunasRatio = 0.4;
-            }
-
-            return {
-                month: month,
-                total: _stats.totalSiswa,
-                lunas: Math.floor(_stats.totalSiswa * lunasRatio),
-                ppdb: Math.floor(_stats.totalSiswa * 0.2 * Math.random()),
-            };
-        });
+        // Fallback dummy data
+        return months.map(month => ({
+            month: month,
+            total: _stats.totalSiswa || 0,
+            lunas: 0,
+            ppdb: 0
+        }));
     };
-
 
     const calculateTrend = () => {
         const data = getMonthlyData();
@@ -217,10 +201,10 @@ export default function AdminDashboard({ user, role, stats, latestPayments }: { 
                 {/* Bagian bawah: kiri = chart, kanan = tabel transaksi terakhir */}
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {/* Line Chart */}
-                    <Card className="border border-gray-100 bg-black text-white shadow-sm transition-all hover:shadow-md">
+                    <Card className="border border-gray-100 bg-white dark:bg-black text-gray-900 dark:text-white shadow-sm transition-all hover:shadow-md">
                         <CardHeader>
-                            <CardTitle className="text-white">Overview</CardTitle>
-                            <CardDescription className="text-gray-400">Januari - Desember 2025</CardDescription>
+                            <CardTitle className="text-gray-900 dark:text-white">Overview</CardTitle>
+                            <CardDescription className="text-gray-500 dark:text-gray-400">Januari - Desember 2025</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <ChartContainer
@@ -228,15 +212,15 @@ export default function AdminDashboard({ user, role, stats, latestPayments }: { 
                                     {
                                         total: {
                                             label: 'Total Siswa',
-                                            color: 'hsl(0, 0%, 100%)', // White
+                                            color: 'hsl(0, 0%, 0%)', // Black for light mode, will be overridden by CSS
                                         },
                                         lunas: {
                                             label: 'SPP Lunas',
-                                            color: 'hsl(210, 100%, 70%)', // Light blue
+                                            color: 'hsl(210, 100%, 50%)', // Blue
                                         },
                                         ppdb: {
                                             label: 'PPDB',
-                                            color: 'hsl(145, 80%, 70%)', // Light green
+                                            color: 'hsl(145, 80%, 50%)', // Green
                                         },
                                     } satisfies ChartConfig
                                 }
@@ -246,7 +230,7 @@ export default function AdminDashboard({ user, role, stats, latestPayments }: { 
                                         <LineChart
                                             data={getMonthlyData()}
                                             margin={{
-                                                left: 0,
+                                                left: 40,
                                                 right: 8,
                                                 top: 20,
                                                 bottom: 0,
@@ -259,14 +243,14 @@ export default function AdminDashboard({ user, role, stats, latestPayments }: { 
                                                 axisLine={false}
                                                 tickMargin={5}
                                                 tickFormatter={(value) => value.slice(0, 3)}
-                                                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                                                tick={{ fontSize: 10, fill: '#6b7280' }}
                                                 scale="point"
                                             />
                                             <YAxis
                                                 tickLine={false}
                                                 axisLine={false}
                                                 tickMargin={5}
-                                                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                                                tick={{ fontSize: 10, fill: '#6b7280' }}
                                                 domain={[0, 'dataMax']}
                                                 hide={true}
                                             />

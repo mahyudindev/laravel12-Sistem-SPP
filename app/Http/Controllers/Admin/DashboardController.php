@@ -50,9 +50,9 @@ class DashboardController extends Controller
         $siswaMenunggak = $totalSiswa - $siswaWithLunasPembayaran;
         
         $monthlyData = [];
-        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $months = ['February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         $indonesianMonths = [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 
+            'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 
             'Agustus', 'September', 'Oktober', 'November', 'Desember'
         ];
         $currentYear = date('Y');
@@ -98,7 +98,7 @@ class DashboardController extends Controller
                 ->distinct('siswa_id')
                 ->count('siswa_id');
                 
-            $lunasCount = ($month == 'January' || $month == 'February') ? 2 : $uniqueStudents;
+            $lunasCount = $uniqueStudents;
             $monthlyData[] = [
                 'month' => $month,
                 'total' => $totalSiswa,
