@@ -112,7 +112,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             
                             <Button 
                                 type="submit" 
-                                className="w-full bg-primary hover:bg-primary/90 text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                                className="w-full bg-primary hover:bg-primary/90 text-black transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
                                 tabIndex={4} 
                                 disabled={processing}
                             >

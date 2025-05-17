@@ -233,7 +233,7 @@ export default function AdminDashboard({ user, role, stats, latestPayments }: { 
                                                 left: 40,
                                                 right: 8,
                                                 top: 20,
-                                                bottom: 0,
+                                                bottom: 32,
                                             }}
                                         >
                                             <CartesianGrid vertical={false} strokeDasharray="3 3" strokeOpacity={0.1} />
