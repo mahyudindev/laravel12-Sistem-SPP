@@ -26,7 +26,7 @@ type Stats = {
     siswaLunas?: number;
     siswaMenunggak?: number;
     monthlyData?: Array<{
-        month: string;
+        month: string;      
         total: number;
         lunas: number;
         ppdb: number;
