@@ -7,7 +7,8 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\Admin\SppController;
 use App\Http\Controllers\Admin\PpdbController;
-use App\Http\Controllers\Admin\PembayaranController;
+use App\Http\Controllers\Admin\PembayaranController as AdminPembayaranController;
+use App\Http\Controllers\Siswa\DataSiswaController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Siswa\DashboardController as SiswaDashboardController;
 use App\Http\Controllers\Siswa\PembayaranSiswaController;
@@ -69,10 +70,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
     
     // Pembayaran Admin routes
     Route::prefix('pembayaran')->group(function () {
-        Route::get('/', [PembayaranController::class, 'index'])->name('admin.pembayaran.index');
-        Route::post('/{id}/approve', [PembayaranController::class, 'approve'])->name('admin.pembayaran.approve');
-        Route::post('/{id}/reject', [PembayaranController::class, 'reject'])->name('admin.pembayaran.reject');
-        Route::post('/{id}/update-status', [PembayaranController::class, 'updateStatus'])->name('admin.pembayaran.update-status');
+                Route::get('/', [AdminPembayaranController::class, 'index'])->name('admin.pembayaran.index');
+                Route::post('/{id}/approve', [AdminPembayaranController::class, 'approve'])->name('admin.pembayaran.approve');
+                Route::post('/{id}/reject', [AdminPembayaranController::class, 'reject'])->name('admin.pembayaran.reject');
+                Route::post('/{id}/update-status', [AdminPembayaranController::class, 'updateStatus'])->name('admin.pembayaran.update-status');
     });
     
     // Laporan routes
@@ -88,20 +89,24 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->group(functio
 });
 
 // Grup route untuk SISWA
-Route::middleware(['auth', 'verified', 'siswa'])->prefix('siswa')->group(function () {
-    Route::get('dashboard', [SiswaDashboardController::class, 'index'])->name('siswa.dashboard');
-    
+Route::middleware(['auth', 'verified', 'siswa'])->prefix('siswa')->name('siswa.')->group(function () {
+    Route::get('dashboard', [SiswaDashboardController::class, 'index'])->name('dashboard');
+
     // Pembayaran routes
-    Route::prefix('pembayaran')->group(function () {
+    Route::prefix('pembayaran')->name('pembayaran.')->group(function () {
         // Redirect main pembayaran
         Route::get('/', function() {
             return redirect()->route('siswa.pembayaran.create');
-        })->name('siswa.pembayaran.index');
-        Route::get('/create', [PembayaranSiswaController::class, 'create'])->name('siswa.pembayaran.create');
-        Route::post('/store', [PembayaranSiswaController::class, 'store'])->name('siswa.pembayaran.store');
-        Route::get('/history', [PembayaranSiswaController::class, 'history'])->name('siswa.pembayaran.history');
-        Route::get('/{id}', [PembayaranSiswaController::class, 'getDetail'])->name('siswa.pembayaran.detail');
+        })->name('index');
+        Route::get('/create', [PembayaranSiswaController::class, 'create'])->name('create');
+        Route::post('/store', [PembayaranSiswaController::class, 'store'])->name('store');
+        Route::get('/history', [PembayaranSiswaController::class, 'history'])->name('history');
+        Route::get('/{id}', [PembayaranSiswaController::class, 'getDetail'])->name('detail');
     });
+
+    // Data Siswa
+    Route::get('data-siswa', [DataSiswaController::class, 'index'])->name('data-siswa.index');
+    Route::patch('data-siswa', [DataSiswaController::class, 'update'])->name('data-siswa.update');
 });
 
 require __DIR__.'/settings.php';

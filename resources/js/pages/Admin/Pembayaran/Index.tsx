@@ -396,7 +396,7 @@ function PembayaranAdmin({ pembayaran, totalPembayaranLunas, totalPembayaranPend
             <div className="container mx-auto px-4 space-y-6">
                 <div className="flex flex-col md:flex-row gap-4">
                     <Card className="p-6 flex-1 bg-white dark:bg-[#0A0A0A] border-zinc-200 dark:border-zinc-800">
-                        <h3 className="text-muted-foreground mb-2">Total Pembayaran Lunas</h3>
+                        <h3 className="text-muted-foreground mb-2">Total Pemasukan Pembayaran</h3>
                         <p className="text-2xl font-bold transition-all duration-300">{formatRupiah(countLunas)}</p>
                     </Card>
                     <Card className="p-6 flex-1 bg-white dark:bg-[#0A0A0A] border-zinc-200 dark:border-zinc-800">
@@ -430,7 +430,7 @@ function PembayaranAdmin({ pembayaran, totalPembayaranLunas, totalPembayaranPend
                                 size="sm"
                                 className={filterStatus === 'lunas' ? 'bg-green-500 hover:bg-green-600' : ''}
                             >
-                                Lunas
+                                Sudah Bayar
                             </Button>
                             <Button 
                                 variant={filterStatus === 'ditolak' ? 'default' : 'outline'} 
@@ -515,7 +515,7 @@ function PembayaranAdmin({ pembayaran, totalPembayaranLunas, totalPembayaranPend
                                                         'bg-red-500 hover:bg-red-600'
                                                     }
                                                 >
-                                                    {payment.status === 'pending' ? 'pending' : payment.status}
+                                                    {payment.status === 'lunas' ? 'Sudah Bayar' : payment.status}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
@@ -601,7 +601,7 @@ function PembayaranAdmin({ pembayaran, totalPembayaranLunas, totalPembayaranPend
                                                 'bg-red-500 hover:bg-red-600'
                                             }
                                         >
-                                            {selectedPayment.status === 'pending' ? 'pending' : selectedPayment.status}
+                                            {selectedPayment.status === 'lunas' ? 'Sudah Bayar' : selectedPayment.status}
                                         </Badge>
                                         <p className="text-xs text-muted-foreground mt-2">Tanggal: {selectedPayment.date}</p>
                                     </div>

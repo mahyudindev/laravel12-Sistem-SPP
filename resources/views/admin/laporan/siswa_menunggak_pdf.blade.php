@@ -68,7 +68,7 @@
                 <th>NIS</th>
                 <th>Nama</th>
                 <th>Kelas</th>
-                <th>Email</th>
+                {{-- <th>Email</th> --}}
                 <th>Item Tunggakan</th>
                 <th>Total Tunggakan</th>
                 <th>Status</th>
@@ -81,7 +81,7 @@
                 <td>{{ is_array($s) ? $s['nis'] : $s->nis }}</td>
                 <td>{{ is_array($s) ? $s['nama'] : $s->nama }}</td>
                 <td style="text-align: center;">{{ is_array($s) ? $s['kelas'] : $s->kelas }}</td>
-                <td>{{ is_array($s) && isset($s['user']) && isset($s['user']['email']) ? $s['user']['email'] : (isset($s->user) && isset($s->user->email) ? $s->user->email : '-') }}</td>
+                {{-- <td>{{ is_array($s) && isset($s['user']) && isset($s['user']['email']) ? $s['user']['email'] : (isset($s->user) && isset($s->user->email) ? $s->user->email : '-') }}</td> --}}
                 <td>
                     @php
                         $siswaId = is_array($s) ? $s['siswa_id'] : $s->siswa_id;
@@ -111,7 +111,7 @@
     <div style="margin-top: 30px;">
         <table width="100%" style="border: none;">
             <tr>
-                <td style="border: none; width: 40%;">
+                <td style="border: none; width: 40%; vertical-align: top;">
                     <p><strong>Total Siswa Menunggak:</strong> {{ count($siswa) }}</p>
                     @php
                         $totalTunggakan = 0;
@@ -121,21 +121,28 @@
                     @endphp
                     <p><strong>Total Nilai Tunggakan:</strong> <span class="total-tunggakan">Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</span></p>
                 </td>
-                <td style="border: none; width: 30%; text-align: center;">
-                    <p>Mengetahui,</p>
-                    <br>
-                    <br>
-                    <br>
-                    <p>_______________________</p>
-                    <p>Kepala Sekolah</p>
-                </td>
-                <td style="border: none; text-align: center; width: 30%;">
-                    <p>{{ \Carbon\Carbon::now()->format('d F Y') }}</p>
-                    <br>
-                    <br>
-                    <br>
-                    <p>_______________________</p>
-                    <p>Admin</p>
+                <td style="border: none; width: 60%;">
+                    <table width="100%" style="border: none;">
+                        <tr>
+                            <td style="border: none; width: 50%;"></td>
+                            <td style="border: none; text-align: center; width: 50%;">
+                                <p>Cilegon, {{ \Carbon\Carbon::now()->format('d F Y') }}</p>
+                                <p>Bendahara</p>
+                                <br><br><br>
+                                <p style="text-decoration: underline; font-weight: bold;">Istikomah</p>
+                                <p>NIP. 197432130000022323</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border: none; text-align: center; padding-top: 30px;">
+                                <p>Mengetahui,</p>
+                                <p>Kepala Sekolah</p>
+                                <br><br><br>
+                                <p style="text-decoration: underline; font-weight: bold;">Siti Anisa</p>
+                                <p>NIP. 197501012000031002</p>
+                            </td>
+                        </tr>
+                    </table>
                 </td>
             </tr>
         </table>

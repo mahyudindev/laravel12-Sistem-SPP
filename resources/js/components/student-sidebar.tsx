@@ -3,15 +3,19 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { LayoutGrid, CreditCard } from 'lucide-react';
+import { LayoutGrid, CreditCard, User } from 'lucide-react';
 import AppLogo from './app-logo';
-
 
 const studentNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/siswa/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Data Siswa',
+        href: '/siswa/data-siswa',
+        icon: User,
     },
     {
         title: 'Pembayaran',

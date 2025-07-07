@@ -137,11 +137,11 @@ function SiswaLunas(props: SiswaLunasProps) {
 
   return (
     <>
-      <Head title="Laporan Siswa Lunas" />
+      <Head title="Laporan Siswa Sudah Bayar" />
       
       {/* Page Header */}
       <div className="flex justify-between items-center px-4 py-4 mb-2">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">Laporan Siswa Lunas</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">Laporan Siswa Sudah Bayar</h1>
         <button 
           onClick={handleDownload}
           className="bg-green-600 hover:bg-green-700 text-zinc-900 dark:text-white py-2 px-4 rounded-md transition duration-200 flex items-center text-sm"

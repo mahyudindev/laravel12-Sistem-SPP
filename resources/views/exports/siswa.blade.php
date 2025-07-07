@@ -39,11 +39,11 @@
                     <img src="{{ public_path('image/logo.png') }}" alt="Logo TKIT PARADISE" style="height:85px;">
                 </td>
                 <td style="border: none; text-align: center; vertical-align: middle;">
-                    <div style="font-size: 34px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px;">TKIT PARADISE</div>
+                    <div style="font-size: 34px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px;">TK PARADISE</div>
                     <div style="font-size: 12px; font-weight: bold; margin-bottom: 2px;">
                         Link. Jl. Sutan Syahrir No.42, Rawa Gondang, Kec. Citangkil, Kota Cilegon, Banten 42414
                     </div>
-                    <div style="font-size: 18px; font-weight: bold; margin-top: 12px;">Data Siswa TK Tahun Ajaran {{ date('Y') }}/{{ date('Y') + 1 }}</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-top: 12px;">Data Siswa TK Tahun Ajaran 2024/2025</div>
                 </td>
             </tr>
         </table>
@@ -80,6 +80,7 @@
         <br>
         <p>_______________________</p>
         <p>Kepala Sekolah</p>
+        <p>NIP. 197501012000031002</p>
     </div>
 </body>
 </html>

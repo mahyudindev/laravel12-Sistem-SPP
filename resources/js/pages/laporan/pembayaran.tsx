@@ -1,305 +1,420 @@
+'use client';
+
+import { FormEvent, useState, useEffect } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Select from 'react-select';
+import {
+    Table, 
+    TableBody, 
+    TableCaption, 
+    TableCell, 
+    TableHead, 
+    TableHeader, 
+    TableRow 
+} from '@/components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Download, Filter, Search, X } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { formatDate, formatRupiah } from '@/lib/utils';
-import { BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { FormEvent, useState } from 'react';
+import { toast, Toaster } from 'sonner';
 
-interface PembayaranDetailProps {
-    spp: {
-        spp_id: number;
-        nama: string;
-        nominal: number;
-    };
+interface DetailItem {
+  id: string;
+  sppName: string | null;
+  ppdbName: string | null;
+  amount: string;
 }
 
 interface PembayaranProps {
-    pembayaran_id: number;
+  id: number | string;
+  name: string;
+  status: string;
+  amount: string;
+  sisaTagihan?: string;
+  date: string;
+  method?: string;
+  receiptNumber?: string;
+  keterangan?: string;
+  approvalDate?: string | null;
+  tahun_ajaran?: string;
+  photoUrl?: string | null;
+  siswa: {
+    id: number | string | null;
+    name: string;
+    kelas: string;
+    nis: string;
+  };
+  details: DetailItem[];
+}
+
+interface Siswa {
     siswa_id: number;
-    total_bayar: number;
-    total_tagihan: number;
-    status_pembayaran: string;
-    tanggal_bayar: string;
-    created_at: string;
-    tahun_ajaran: string;
-    siswa: {
-        siswa_id: number;
-        nama: string;
-        nis: string;
-        kelas: string;
-    };
-    pembayaranDetail: PembayaranDetailProps[];
+    nama: string;
+    nis: string;
+    kelas: string;
 }
 
 interface LaporanPembayaranProps {
-    pembayaran?: PembayaranProps[];
-    filters?: {
-        dari_tanggal?: string;
-        sampai_tanggal?: string;
-    };
+  pembayaran?: PembayaranProps[];
+  filters?: {
+    siswa_id?: number | null;
+  };
+  totalBayar?: number;
+  siswaList?: Siswa[];
 }
 
-function LaporanPembayaran(props: any) {
-    console.log('Payment report page loaded', props);
+function LaporanPemasukan(props: LaporanPembayaranProps) {
+  // Safely extract props
+  const pembayaran = props?.pembayaran || [];
+  const filters = props?.filters || {};
+  const totalBayar = props?.totalBayar || 0;
+  const siswaList = props?.siswaList || [];
+  
+  // Debug data structure
+  useEffect(() => {
+    console.log('Pembayaran data:', pembayaran);
+  }, [pembayaran]);
+  
+  const [siswaId, setSiswaId] = useState<string>(filters.siswa_id ? String(filters.siswa_id) : '');
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PembayaranProps | null>(null);
+  const [countNominal, setCountNominal] = useState<number>(0);
+  
+  // Set up animation for the total nominal
+  useEffect(() => {
+    if (totalBayar) {
+      const duration = 1500;
+      const steps = 30;
+      const stepTime = duration / steps;
+      
+      let currentStep = 0;
+      const timer = setInterval(() => {
+        currentStep++;
+        
+        const progress = 1 - Math.pow(1 - currentStep / steps, 3);
+        
+        setCountNominal(Math.floor(totalBayar * progress));
+        
+        if (currentStep >= steps) {
+          clearInterval(timer);
+          setCountNominal(totalBayar);
+        }
+      }, stepTime);
+      
+      return () => clearInterval(timer);
+    }
+  });
 
-    // Safely extract props
-    const pembayaran = props?.pembayaran || [];
-    const filters = props?.filters || {};
+  const handleFilter = (e: FormEvent) => {
+    e.preventDefault();
+    router.get('/admin/laporan/pembayaran', {
+      siswa_id: siswaId,
+    });
+  };
 
-    const [dariTanggal, setDariTanggal] = useState<string>(filters.dari_tanggal || '');
-    const [sampaiTanggal, setSampaiTanggal] = useState<string>(filters.sampai_tanggal || '');
+  const handleDownload = () => {
+    // Force a traditional GET request download by opening in new window
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = '/admin/laporan/pembayaran/download-pdf';
+    form.target = '_blank';
+    
+    // Add the filter parameters
+    if (siswaId) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'siswa_id';
+        input.value = siswaId;
+        form.appendChild(input);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
 
-    const handleFilter = (e: FormEvent) => {
-        e.preventDefault();
-        router.get('/admin/laporan/pembayaran', {
-            dari_tanggal: dariTanggal,
-            sampai_tanggal: sampaiTanggal,
-        });
-    };
+  const handleReset = () => {
+    setSiswaId('');
+    router.get('/admin/laporan/pembayaran');
+  };
+  
+  const handleDetail = (payment: PembayaranProps) => {
+    setSelectedPayment(payment);
+    setDetailDialogOpen(true);
+  };
 
-    const handleDownload = () => {
-        // Use the dedicated download route with the same filters
-        router.get(
-            '/admin/laporan/pembayaran/download-pdf',
-            {
-                dari_tanggal: dariTanggal,
-                sampai_tanggal: sampaiTanggal,
-            },
-            {
-                // Force a traditional GET request download by opening in new window
-                onBefore: () => {
-                    // Create a hidden form to submit a GET request that downloads directly
-                    const form = document.createElement('form');
-                    form.method = 'GET';
-                    form.action = '/admin/laporan/pembayaran/download-pdf';
-                    form.target = '_blank';
+  return (
+    <>
+      <Head title="Laporan Pemasukan" />
+      <Toaster />
+      
+      <div className="container mx-auto px-4 space-y-6">
 
-                    // Add the filter parameters
-                    if (dariTanggal) {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'dari_tanggal';
-                        input.value = dariTanggal;
-                        form.appendChild(input);
-                    }
-
-                    if (sampaiTanggal) {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'sampai_tanggal';
-                        input.value = sampaiTanggal;
-                        form.appendChild(input);
-                    }
-
-                    document.body.appendChild(form);
-                    form.submit();
-                    document.body.removeChild(form);
-
-                    return false; // Prevent default Inertia behavior
-                },
-            },
-        );
-    };
-
-    const handleReset = () => {
-        setDariTanggal('');
-        setSampaiTanggal('');
-        router.get('/admin/laporan/pembayaran');
-    };
-
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/admin/dashboard' },
-        { title: 'Laporan', href: '#' },
-        { title: 'Pembayaran Lunas', href: '/admin/laporan/pembayaran' },
-    ];
-
-    return (
-        <>
-            <Head title="Laporan Pembayaran Lunas" />
-
-            {/* Page Header */}
-            <div className="mb-2 flex items-center justify-between px-4 py-4">
-                <h1 className="text-xl font-semibold text-white">Laporan Pembayaran Lunas</h1>
-                <button
-                    onClick={handleDownload}
-                    className="flex items-center rounded-md bg-green-600 px-4 py-2 text-sm text-white transition duration-200 hover:bg-green-700"
+        <div className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Laporan Pemasukan</h2>
+            
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
+            </Button>
+          </div>
+          
+          {/* Filter Form */}
+          <div className="p-4 mb-6 bg-zinc-100/60 dark:bg-zinc-900/40 rounded-lg border border-zinc-200 dark:border-zinc-800">
+            <form onSubmit={handleFilter} className="flex flex-wrap gap-4 items-end">
+              <div className="flex-1 min-w-[300px]">
+                <Label htmlFor="siswa_id" className="text-sm font-medium mb-1.5">
+                    Siswa
+                </Label>
+                <Select
+                    instanceId="siswa-select"
+                    options={siswaList.map((siswa) => ({
+                        value: String(siswa.siswa_id),
+                        label: `${siswa.nama} (${siswa.nis})`,
+                    }))}
+                    value={siswaList.map((siswa) => ({
+                        value: String(siswa.siswa_id),
+                        label: `${siswa.nama} (${siswa.nis})`,
+                    })).find(option => option.value === siswaId)}
+                    onChange={(selectedOption) => setSiswaId(selectedOption ? selectedOption.value : '')}
+                    placeholder="Cari atau pilih siswa..."
+                    isClearable
+                    menuPortalTarget={document.body}
+                    styles={{
+                        control: (base, state) => ({
+                            ...base,
+                            backgroundColor: '#09090b',
+                            minHeight: '36px',
+                            height: '36px',
+                            borderColor: state.isFocused ? '#60a5fa' : '#3f3f46',
+                            boxShadow: state.isFocused ? '0 0 0 1px #60a5fa' : 'none',
+                            '&:hover': {
+                                borderColor: '#60a5fa',
+                            },
+                        }),
+                        valueContainer: (base) => ({
+                            ...base,
+                            height: '36px',
+                            padding: '0 8px',
+                        }),
+                        singleValue: (base) => ({ ...base, color: 'white' }),
+                        input: (base) => ({ ...base, color: 'white', margin: '0px' }),
+                        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                        menu: (base) => ({ ...base, backgroundColor: '#09090b' }),
+                        option: (base, { isFocused, isSelected }) => ({
+                            ...base,
+                            backgroundColor: isSelected ? '#2563eb' : isFocused ? '#27272a' : '#09090b',
+                            color: 'white',
+                            ':active': {
+                                ...base[':active'],
+                                backgroundColor: '#2563eb',
+                            },
+                        }),
+                        placeholder: (base) => ({ ...base, color: '#a1a1aa' }),
+                    }}
+                />
+              </div>
+              
+              <div className="flex items-end space-x-2">
+                <Button 
+                  type="submit" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                    </svg>
-                    Download PDF
-                </button>
-            </div>
-
-            {/* Main Content Card */}
-            <div className="overflow-hidden rounded-lg border border-gray-800 bg-[#0A0A0A] shadow-lg">
-                {/* Filter Section */}
-                <div className="border-b border-gray-800 p-4">
-                    <form onSubmit={handleFilter} className="flex flex-wrap gap-4">
-                        <div className="min-w-[200px] flex-1">
-                            <label htmlFor="dari_tanggal" className="mb-1 block text-sm font-medium text-gray-300">
-                                Dari Tanggal
-                            </label>
-                            <input
-                                type="date"
-                                id="dari_tanggal"
-                                value={dariTanggal}
-                                onChange={(e) => setDariTanggal(e.target.value)}
-                                className="w-full rounded-md border border-gray-700 bg-[#0A0A0A] px-3 py-2 text-white focus:border-gray-500 focus:ring-gray-500"
-                                placeholder="mm/dd/yyyy"
-                            />
-                        </div>
-
-                        <div className="min-w-[200px] flex-1">
-                            <label htmlFor="sampai_tanggal" className="mb-1 block text-sm font-medium text-gray-300">
-                                Sampai Tanggal
-                            </label>
-                            <input
-                                type="date"
-                                id="sampai_tanggal"
-                                value={sampaiTanggal}
-                                onChange={(e) => setSampaiTanggal(e.target.value)}
-                                className="w-full rounded-md border border-gray-700 bg-[#0A0A0A] px-3 py-2 text-white focus:border-gray-500 focus:ring-gray-500"
-                                placeholder="mm/dd/yyyy"
-                            />
-                        </div>
-
-                        <div className="flex items-end space-x-2">
-                            <button
-                                type="submit"
-                                className="flex items-center rounded-md bg-gray-700 px-4 py-2 text-white transition duration-200 hover:bg-gray-600"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="mr-2 h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                                    />
-                                </svg>
-                                Filter
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                className="flex items-center rounded-md bg-gray-800 px-4 py-2 text-white transition duration-200 hover:bg-gray-700"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="mr-2 h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Reset
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                {/* Table Section */}
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-800">
-                        <thead>
-                            <tr className="bg-opacity-40 bg-black">
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    No
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    Tanggal
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    Siswa
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    Kelas
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    Item Pembayaran
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    Total
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-800">
-                            {Array.isArray(pembayaran) && pembayaran.length > 0 ? (
-                                pembayaran.map((p, index) => (
-                                    <tr key={p.pembayaran_id} className="hover:bg-opacity-20 transition duration-150 hover:bg-black">
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-400">{index + 1}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-400">{formatDate(p.tanggal_bayar)}</td>
-                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap text-white">
-                                            {p.siswa?.nama || '-'}
-                                            {p.siswa?.nis && <div className="text-xs text-gray-500">{p.siswa.nis}</div>}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-400">{p.siswa?.kelas || '-'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-400">
-                                            {Array.isArray(p.pembayaranDetail) &&
-                                                p.pembayaranDetail.map((detail: PembayaranDetailProps, idx: number) => (
-                                                    <div key={idx}>{detail.spp?.nama || 'Item Pembayaran'}</div>
-                                                ))}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm font-medium whitespace-nowrap text-green-500">
-                                            {formatRupiah(p.total_bayar)}
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="inline-flex rounded-full bg-green-600 px-2 py-1 text-xs leading-5 font-semibold text-white">
-                                                Lunas
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+                
+                <Button
+                  type="button"
+                  onClick={handleReset}
+                  variant="outline"
+                  className="border-zinc-300 dark:border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-100 flex items-center"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Reset
+                </Button>
+              </div>
+            </form>
+          </div>
+          
+          <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No</TableHead>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Siswa</TableHead>
+                  <TableHead>Kelas</TableHead>
+                  <TableHead>Item Pembayaran</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.isArray(pembayaran) && pembayaran.length > 0 ? (
+                  pembayaran.map((p, index) => (
+                    <TableRow 
+                      key={p.id}
+                      className="hover:bg-muted cursor-pointer"
+                      onClick={() => handleDetail(p)}
+                    >
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{p.date}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{p.siswa?.name || '-'}</div>
+                        <div className="text-xs text-muted-foreground">{p.siswa?.nis || '-'}</div>
+                      </TableCell>
+                      <TableCell>{p.siswa?.kelas || '-'}</TableCell>
+                      <TableCell>
+                        {p.details && p.details.length > 0 ? (
+                          <div className="flex flex-col">
+                            {p.details.length === 1 ? (
+                              <p className="font-medium">
+                                {p.details[0]?.sppName || 
+                                 p.details[0]?.ppdbName || 
+                                 '-'}
+                              </p>
                             ) : (
-                                <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                                        <div className="flex flex-col items-center">
-                                            <svg className="mb-4 h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={1.5}
-                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                />
-                                            </svg>
-                                            <p className="text-lg font-medium">Tidak ada data pembayaran</p>
-                                            <p className="mt-1 text-sm">Ubah filter atau periksa data pembayaran</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                              <>
+                                <p className="font-medium">
+                                  {p.details[0]?.sppName || 
+                                   p.details[0]?.ppdbName || 
+                                   '-'}
+                                  <span className="text-muted-foreground"> +{p.details.length - 1} lainnya</span>
+                                </p>
+                              </>
                             )}
-                        </tbody>
-                    </table>
+                          </div>
+                        ) : (
+                          <div className="font-medium">-</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium text-green-500">{p.amount}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-500 hover:bg-green-600">
+                          Sudah Bayar
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6">
+                      <div className="flex flex-col items-center">
+                        <svg className="h-12 w-12 text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p className="text-lg font-medium">Tidak ada data pembayaran</p>
+                        <p className="mt-1 text-sm">Silakan ubah filter atau periksa data pembayaran</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {/* Summary Footer */}
+          {Array.isArray(pembayaran) && pembayaran.length > 0 && (
+            <div className="mt-4 flex justify-end">
+              <div className="max-w-sm w-full rounded-lg bg-zinc-100/60 dark:bg-zinc-900/40 p-4 border border-zinc-200 dark:border-zinc-800">
+                <div className="flex justify-between items-center py-2 border-b border-zinc-200 dark:border-zinc-800">
+                  <span className="text-gray-400">Total Pembayaran:</span>
+                  <span className="font-medium text-white">{pembayaran.length}</span>
                 </div>
-
-                {/* No summary section needed to match the screenshot */}
+                <div className="flex justify-between items-center pt-3">
+                  <span className="text-gray-400">Total Nominal:</span>
+                  <span className="font-medium text-green-500">
+                    {formatRupiah(pembayaran.reduce((sum, item) => sum + (parseInt(String(item.amount).replace(/[^0-9]/g, '')) || 0), 0))}
+                  </span>
+                </div>
+              </div>
             </div>
-        </>
-    );
+          )}
+        </div>
+      </div>
+      
+      {/* Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] w-[95vw] max-h-[80vh] overflow-y-auto hide-scrollbar bg-white dark:bg-[#0A0A0A] border-zinc-200 dark:border-zinc-800">
+          <DialogHeader>
+            <DialogTitle>Detail Pembayaran</DialogTitle>
+          </DialogHeader>
+          {selectedPayment && (
+            <div className="space-y-6">
+              <div className="p-4 bg-zinc-100/60 dark:bg-zinc-900/40 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-1">Siswa</h4>
+                    <p className="font-medium">{selectedPayment.siswa?.name || '-'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{selectedPayment.siswa?.kelas || '-'} / {selectedPayment.siswa?.nis || '-'}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-1">Status</h4>
+                    <Badge className="bg-green-500 hover:bg-green-600">
+                      Sudah Bayar
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-2">Tanggal: {selectedPayment.date}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-zinc-100/60 dark:bg-zinc-900/40 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Item Pembayaran</h4>
+                <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {selectedPayment.details && selectedPayment.details.length > 0 ? (
+                    selectedPayment.details.map((detail, index) => (
+                      <li key={index} className="flex justify-between text-sm py-2">
+                        <span className="font-medium">{detail.sppName || detail.ppdbName || "-"}</span>
+                        <span className="text-right">{detail.amount}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="flex justify-between text-sm py-2">
+                      <span className="font-medium">SPP {selectedPayment.tahun_ajaran || '-'}</span>
+                      <span className="text-right">{selectedPayment.amount}</span>
+                    </li>
+                  )}
+                </ul>
+                <div className="flex justify-between font-bold mt-3 pt-3 border-t border-zinc-300 dark:border-zinc-700 text-base">
+                  <span>Total</span>
+                  <span className="text-white">{selectedPayment.amount}</span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-zinc-100/60 dark:bg-zinc-900/40 rounded-lg border border-zinc-200 dark:border-zinc-800 border-green-300/50 dark:border-green-800/50">
+                <h4 className="text-sm font-medium text-green-400">Status Pembayaran</h4>
+                <p className="font-medium text-green-500">Pembayaran disetujui</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-col space-y-2 sm:space-y-0 mt-4">
+            <Button variant="secondary" onClick={() => setDetailDialogOpen(false)} className="w-full sm:w-40 mx-auto">
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
-LaporanPembayaran.layout = (page: React.ReactNode) => {
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: '/admin/dashboard' },
-        { title: 'Laporan', href: '#' },
-        { title: 'Pembayaran Lunas', href: '/admin/laporan/pembayaran' },
-    ];
-    return <AppLayout breadcrumbs={breadcrumbs}>{page}</AppLayout>;
-};
+LaporanPemasukan.layout = (page: React.ReactNode) => <AppLayout children={page} />;
 
-export default LaporanPembayaran;
+export default LaporanPemasukan;

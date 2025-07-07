@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Pembayaran Lunas</title>
+    <title>Laporan Pemasukan</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,13 +44,16 @@
                 </td>
                 <td style="border: none; text-align: center; vertical-align: middle;">
                     <div style="font-size: 34px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px;">SISTEM PEMBAYARAN SPP</div>
+                    <div style="font-size: 34px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px;">TK PARADISE</div>
                     <div style="font-size: 12px; font-weight: bold; margin-bottom: 2px;">
-                        Jl. Raya Serang KM. 10, Kota Serang, Banten 42111
+                        Link, Jl. Sutan Syahrir No.42, Rawa Gondang, Kec. Citangkil, Kota Cilegon, Banten 42414
                     </div>
-                    <div style="font-size: 18px; font-weight: bold; margin-top: 12px;">Laporan Pembayaran Lunas</div>
+                    <div style="font-size: 18px; font-weight: bold; margin-top: 12px;">Laporan Pemasukan</div>
                     <div style="font-size: 14px; margin-top: 4px;">
-                        Periode: {{ request('dari_tanggal') ? \Carbon\Carbon::parse(request('dari_tanggal'))->format('d/m/Y') : 'Semua' }} 
-                        - {{ request('sampai_tanggal') ? \Carbon\Carbon::parse(request('sampai_tanggal'))->format('d/m/Y') : 'Semua' }}
+                        Periode: {{ $filters['dari_tanggal'] ?? 'Semua' }} - {{ $filters['sampai_tanggal'] ?? 'Semua' }}
+                        @if(isset($filters['siswa']) && $filters['siswa'])
+                            <br>Siswa: {{ $filters['siswa'] }}
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -87,7 +90,7 @@
                     @endif
                 </td>
                 <td>Rp {{ number_format($p['total_bayar'], 0, ',', '.') }}</td>
-                <td class="status-lunas" style="text-align: center;">Lunas</td>
+                <td class="status-lunas" style="text-align: center;">Sudah Bayar</td>
             </tr>
             @empty
             <tr>
@@ -100,25 +103,32 @@
     <div style="margin-top: 30px;">
         <table width="100%" style="border: none;">
             <tr>
-                <td style="border: none; width: 40%;">
+                <td style="border: none; width: 40%; vertical-align: top;">
                     <p><strong>Total Pembayaran:</strong> {{ $pembayaran->count() }}</p>
                     <p><strong>Total Nominal:</strong> Rp {{ number_format($pembayaran->sum('total_bayar'), 0, ',', '.') }}</p>
                 </td>
-                <td style="border: none; width: 30%; text-align: center;">
-                    <p>Mengetahui,</p>
-                    <br>
-                    <br>
-                    <br>
-                    <p>_______________________</p>
-                    <p>Kepala Sekolah</p>
-                </td>
-                <td style="border: none; text-align: center; width: 30%;">
-                    <p>{{ \Carbon\Carbon::now()->format('d F Y') }}</p>
-                    <br>
-                    <br>
-                    <br>
-                    <p>_______________________</p>
-                    <p>Admin</p>
+                <td style="border: none; width: 60%;">
+                    <table width="100%" style="border: none;">
+                        <tr>
+                            <td style="border: none; width: 50%;"></td>
+                            <td style="border: none; text-align: center; width: 50%;">
+                                <p>Cilegon, {{ \Carbon\Carbon::now()->format('d F Y') }}</p>
+                                <p>Bendahara</p>
+                                <br><br><br>
+                                <p style="text-decoration: underline; font-weight: bold;">Istikomah</p>
+                                <p>NIP. 197432130000022323</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border: none; text-align: center; padding-top: 30px;">
+                                <p>Mengetahui,</p>
+                                <p>Kepala Sekolah</p>
+                                <br><br><br>
+                                <p style="text-decoration: underline; font-weight: bold;">Siti Anisa</p>
+                                <p>NIP. 197501012000031002</p>
+                            </td>
+                        </tr>
+                    </table>
                 </td>
             </tr>
         </table>

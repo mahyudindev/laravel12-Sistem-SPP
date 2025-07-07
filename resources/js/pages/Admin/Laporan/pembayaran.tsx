@@ -67,7 +67,7 @@ interface LaporanPembayaranProps {
   totalBayar?: number;
 }
 
-function LaporanPembayaran(props: any) {
+function LaporanPemasukan(props: any) {
   // Safely extract props
   const pembayaran = props?.pembayaran || [];
   const filters = props?.filters || {};
@@ -159,14 +159,14 @@ function LaporanPembayaran(props: any) {
 
   return (
     <>
-      <Head title="Laporan Pembayaran Lunas" />
+      <Head title="Laporan Pemasukan" />
       <Toaster />
       
       <div className="container mx-auto px-4 space-y-6">
 
         <div className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Laporan Pembayaran Lunas</h2>
+            <h2 className="text-xl font-semibold">Laporan Pemasukan</h2>
             
             <Button 
               className="bg-green-600 hover:bg-green-700 text-white"
@@ -283,7 +283,7 @@ function LaporanPembayaran(props: any) {
                       <TableCell className="font-medium text-green-500">{p.amount}</TableCell>
                       <TableCell>
                         <Badge className="bg-green-500 hover:bg-green-600">
-                          Lunas
+                          Sudah Bayar
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -343,7 +343,7 @@ function LaporanPembayaran(props: any) {
                   <div className="text-right">
                     <h4 className="text-sm font-medium text-muted-foreground mb-1">Status</h4>
                     <Badge className="bg-green-500 hover:bg-green-600">
-                      Lunas
+                      Sudah Bayar
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-2">Tanggal: {selectedPayment.date}</p>
                   </div>
@@ -390,6 +390,6 @@ function LaporanPembayaran(props: any) {
   );
 }
 
-LaporanPembayaran.layout = (page: React.ReactNode) => <AppLayout children={page} />;
+LaporanPemasukan.layout = (page: React.ReactNode) => <AppLayout children={page} />;
 
-export default LaporanPembayaran;
+export default LaporanPemasukan;

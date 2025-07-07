@@ -13,6 +13,8 @@ import type { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { BanknoteIcon, CreditCardIcon, ImageIcon, WalletIcon } from 'lucide-react';
 import { useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -50,6 +52,130 @@ export default function SiswaDashboard({
             setSelectedPayment(payment);
             setImageDialogOpen(true);
         }
+    };
+
+    const generatePdf = (payment: any) => {
+        if (!payment) return;
+
+        const doc = new jsPDF();
+        const logoUrl = '/image/logo.png';
+        const stampUrl = '/image/stample.png';
+
+        const getImageBase64AsPromise = (url: string): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0);
+                        const dataURL = canvas.toDataURL('image/png');
+                        resolve(dataURL);
+                    } else {
+                        reject(new Error('Could not get canvas context'));
+                    }
+                };
+                img.onerror = (err) => reject(err);
+                img.src = url;
+            });
+        };
+
+        const imagePromises = [getImageBase64AsPromise(logoUrl)];
+        if (payment.status === 'lunas') {
+            imagePromises.push(getImageBase64AsPromise(stampUrl));
+        }
+
+        Promise.all(imagePromises).then(([logoBase64, stampBase64]) => {
+            // Header
+            doc.addImage(logoBase64, 'PNG', 15, 12, 25, 25);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('TK PARADISE', 105, 20, { align: 'center' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text('Jl. Sutan Syahrir No.42, Rawa Gondang, Kec. Citangkil,', 105, 27, { align: 'center' });
+            doc.text('Kota Cilegon, Banten 42414', 105, 32, { align: 'center' });
+            doc.setLineWidth(0.7);
+            doc.line(15, 40, 195, 40);
+
+            // Title
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.text('KWITANSI PEMBAYARAN', 105, 50, { align: 'center' });
+
+            // Payment Info
+            const startY = 65;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Telah diterima dari:', 20, startY);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${user.name} / ${user.nis}`, 55, startY);
+
+            doc.setFont('helvetica', 'normal');
+            doc.text('No. Kwitansi:', 135, startY);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`INV-${payment.id}`, 160, startY);
+
+            doc.setFont('helvetica', 'normal');
+            doc.text('Tanggal Bayar:', 135, startY + 6);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${new Date(payment.tanggal_bayar).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, 160, startY + 6);
+
+            // Table of items
+            const tableColumn = ["Keterangan Pembayaran", "Jumlah"];
+            const tableRows: any[][] = [];
+            if (payment.details && payment.details.length > 0) {
+                payment.details.forEach((detail: any) => {
+                    tableRows.push([detail.sppName || detail.ppdbName || '-', detail.amount]);
+                });
+            }
+
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: startY + 15,
+                theme: 'grid',
+                headStyles: { fillColor: [22, 160, 133], textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 10, cellPadding: 2 },
+                columnStyles: { 1: { halign: 'right' } },
+                didDrawPage: (data) => {
+                    if (data.cursor) {
+                        const totalY = data.cursor.y + 10;
+                        doc.setFontSize(11);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text('Total Pembayaran', 130, totalY);
+                        doc.text(`${payment.amount || payment.totalAmount}`, 195, totalY, { align: 'right' });
+
+                        // Signature and Stamp section
+                        if (payment.status === 'lunas' && stampBase64) {
+                            const signatureY = totalY + 10;
+                            const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+                            doc.setFontSize(10);
+                            doc.setFont('helvetica', 'normal');
+                            doc.text(`Cilegon, ${today}`, 195, signatureY, { align: 'right' });
+                            doc.text('Penanggung jawab,', 195, signatureY + 5, { align: 'right' });
+
+                            doc.addImage(stampBase64, 'PNG', 150, signatureY + 7, 40, 30);
+
+                            doc.setFont('helvetica', 'bold');
+                            doc.text('Bendahara', 195, signatureY + 40, { align: 'right' });
+                        }
+                    }
+                },
+            });
+
+            // Footer Note
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Kwitansi ini dicetak oleh sistem dan merupakan bukti pembayaran yang sah.', 105, 285, { align: 'center' });
+
+            // Save the PDF
+            doc.save(`kwitansi-${payment.id}-${user.name}.pdf`);
+        });
     };
 
     
@@ -137,7 +263,7 @@ export default function SiswaDashboard({
                                                         : 'bg-red-500 hover:bg-red-600'
                                                 }
                                             >
-                                                {payment.status === 'pending' ? 'pending' : payment.status}
+                                                {payment.status === 'lunas' ? 'Sudah Bayar' : payment.status}
                                             </Badge>
                                         </div>
                                         
@@ -160,7 +286,7 @@ export default function SiswaDashboard({
                                             <div className={`mt-2 text-xs ${payment.status === 'ditolak' ? 'text-red-400' : 'text-green-400'}`}>
                                                 {payment.status === 'ditolak' 
                                                     ? (payment.keterangan || 'Pembayaran ditolak') 
-                                                    : 'Disetujui'}
+                                                    : 'Sudah Bayar'}
                                             </div>
                                         )}
                                     </div>
@@ -238,14 +364,14 @@ export default function SiswaDashboard({
                                                                     : 'bg-red-500 hover:bg-red-600'
                                                             }
                                                         >
-                                                            {payment.status === 'pending' ? 'pending' : payment.status}
+                                                            {payment.status === 'lunas' ? 'Sudah Bayar' : payment.status}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell className="max-w-[200px] truncate">
                                                         {payment.status === 'ditolak' ? (
                                                             <div className="font-medium text-red-500">{payment.keterangan || 'Pembayaran ditolak'}</div>
                                                         ) : payment.status === 'lunas' ? (
-                                                            <div className="text-green-500">Disetujui</div>
+                                                            <div className="text-green-500">Sudah Bayar</div>
                                                         ) : (
                                                             ''
                                                         )}
@@ -300,7 +426,7 @@ export default function SiswaDashboard({
                 <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
                     <DialogContent className="hide-scrollbar max-h-[80vh] w-[95vw] overflow-y-auto border-zinc-800 bg-[#0A0A0A] sm:max-w-[600px]">
                         <DialogHeader>
-                            <DialogTitle>Detail Pembayaran</DialogTitle>
+                            <DialogTitle>Detail Pembayarannn</DialogTitle>
                             <DialogDescription className="sr-only">Informasi detail pembayaran siswa</DialogDescription>
                         </DialogHeader>
                         {selectedPayment && (
@@ -354,7 +480,7 @@ export default function SiswaDashboard({
                                                         : 'bg-red-500 hover:bg-red-600'
                                                 }
                                             >
-                                                {selectedPayment.status === 'pending' ? 'pending' : selectedPayment.status}
+                                                {selectedPayment.status === 'lunas' ? 'Sudah Bayar' : selectedPayment.status}
                                             </Badge>
                                         </div>
                                     </div>
@@ -405,7 +531,7 @@ export default function SiswaDashboard({
                                 {selectedPayment.status === 'lunas' && (
                                     <div className="rounded-lg border border-green-800/50 border-zinc-800 bg-zinc-900/40 p-4">
                                         <h4 className="text-sm font-medium text-green-400">Status Pembayaran</h4>
-                                        <p className="font-medium text-green-500">Pembayaran disetujui</p>
+                                        <p className="font-medium text-green-500">Sudah Bayar</p>
                                         {selectedPayment.approvalDate && (
                                             <p className="mt-1 text-xs text-green-400">Tanggal persetujuan: {selectedPayment.approvalDate}</p>
                                         )}
@@ -423,10 +549,13 @@ export default function SiswaDashboard({
                                 )}
                             </div>
                         )}
-                        <DialogFooter className="mt-4 flex-col space-y-2 sm:space-y-0">
-                            <Button variant="secondary" onClick={() => setDetailDialogOpen(false)} className="mx-auto w-full sm:w-40">
+                        <DialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:space-x-2">
+                            <Button variant="secondary" onClick={() => setDetailDialogOpen(false)}>
                                 Tutup
                             </Button>
+                            {selectedPayment?.status === 'lunas' && (
+                                <Button onClick={() => generatePdf(selectedPayment)}>Download PDF</Button>
+                            )}
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

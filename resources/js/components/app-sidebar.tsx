@@ -69,7 +69,7 @@ const mainNavItems: (NavItem | ExtendedNavGroup | NavDivider)[] = [
                 icon: BarChart3,
             },
             {
-                title: 'Laporan Siswa Lunas',
+                title: 'Laporan Siswa Sudah Bayar',
                 href: '/admin/laporan/siswa-lunas',
                 icon: FileText,
             },
@@ -85,18 +85,24 @@ const mainNavItems: (NavItem | ExtendedNavGroup | NavDivider)[] = [
 export function AppSidebar() {
     // Mengambil data user dari usePage
     const { auth } = usePage().props as any;
-    const isAdmin = auth?.user?.role === 'admin';
-    console.log('Current user role:', auth?.user?.role);
-    console.log('Sidebar loaded, checking routes');
-    
-    // Filter item yang hanya boleh dilihat oleh admin
-    const filteredNavItems = mainNavItems.filter(item => {
-        if (!isAdmin) {
-            // Jika bukan admin, sembunyikan menu Pengelolaan Akun, Data Master, dan Laporan
+    const userRole = auth?.user?.role;
+
+    // Filter nav items based on user role
+    const filteredNavItems = mainNavItems.filter((item) => {
+        // For kepsek, only show the 'Dashboard' and 'Laporan' menus
+        if (userRole === 'kepsek') {
+            const title = (item as NavItem).title;
+            return title === 'Dashboard' || title === 'Laporan';
+        }
+
+        // For other non-admin roles, hide specific menus
+        if (userRole !== 'admin') {
             if ((item as NavItem).title === 'Pengelolaan Akun') return false;
             if ((item as ExtendedNavGroup).title === 'Data Master') return false;
             if ((item as ExtendedNavGroup).title === 'Laporan') return false;
         }
+
+        // Admin can see everything
         return true;
     });
     

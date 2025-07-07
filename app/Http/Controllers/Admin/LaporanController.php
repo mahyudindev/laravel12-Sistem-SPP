@@ -19,6 +19,8 @@ class LaporanController extends Controller
 {
     public function pembayaran(Request $request)
     {
+        $siswaList = Siswa::where('is_aktif', true)->orderBy('nama')->get(['siswa_id', 'nama', 'nis', 'kelas']);
+
         $query = Pembayaran::with([
             'siswa:siswa_id,nama,nis,kelas', 
             'pembayaranDetail' => function($query) {
@@ -27,12 +29,8 @@ class LaporanController extends Controller
         ])
         ->where('status_pembayaran', 'lunas');
         
-        if ($request->filled('dari_tanggal')) {
-            $query->whereDate('tanggal_bayar', '>=', $request->dari_tanggal);
-        }
-        
-        if ($request->filled('sampai_tanggal')) {
-            $query->whereDate('tanggal_bayar', '<=', $request->sampai_tanggal);
+        if ($request->filled('siswa_id')) {
+            $query->where('pembayaran.siswa_id', $request->siswa_id);
         }
         
         $pembayaranRows = $query->latest('tanggal_bayar')->get();
@@ -141,14 +139,14 @@ class LaporanController extends Controller
         
         // Calculate total amount
         $totalBayar = $pembayaranRows->sum('total_bayar');
-        
-        return Inertia::render('Admin/Laporan/pembayaran', [
+
+        return Inertia::render('laporan/pembayaran', [
             'pembayaran' => $pembayaran,
             'filters' => [
-                'dari_tanggal' => $request->dari_tanggal,
-                'sampai_tanggal' => $request->sampai_tanggal,
+                'siswa_id' => $request->integer('siswa_id'),
             ],
-            'totalBayar' => $totalBayar
+            'totalBayar' => $totalBayar,
+            'siswaList' => $siswaList
         ]);
     }
     
@@ -162,13 +160,8 @@ class LaporanController extends Controller
         ])
         ->where('status_pembayaran', 'lunas');
         
-        // Apply date filters
-        if ($request->filled('dari_tanggal')) {
-            $query->whereDate('tanggal_bayar', '>=', $request->dari_tanggal);
-        }
-        
-        if ($request->filled('sampai_tanggal')) {
-            $query->whereDate('tanggal_bayar', '<=', $request->sampai_tanggal);
+        if ($request->filled('siswa_id')) {
+            $query->where('pembayaran.siswa_id', $request->siswa_id);
         }
         
         // Get the latest payments first (newest to oldest)
@@ -204,12 +197,17 @@ class LaporanController extends Controller
             ];
         });
         
+        $siswaName = null;
+        if ($request->filled('siswa_id')) {
+            $siswa = Siswa::find($request->siswa_id);
+            $siswaName = $siswa ? $siswa->nama . ' (' . $siswa->nis . ')' : null;
+        }
+
         $data = [
-            'title' => 'Laporan Pembayaran Lunas',
+            'title' => 'Laporan Pemasukan',
             'date' => date('d-m-Y'),
             'filters' => [
-                'dari_tanggal' => $request->dari_tanggal ? date('d-m-Y', strtotime($request->dari_tanggal)) : '-',
-                'sampai_tanggal' => $request->sampai_tanggal ? date('d-m-Y', strtotime($request->sampai_tanggal)) : '-',
+                'siswa' => $siswaName,
             ],
             'pembayaran' => $formattedData,
         ];
@@ -467,7 +465,7 @@ class LaporanController extends Controller
         
         // Format data for PDF
         $data = [
-            'title' => 'Laporan Siswa Lunas',
+            'title' => 'Laporan Siswa Sudah Bayar',
             'date' => date('d-m-Y'),
             'kelas' => $filterLabels['kelas'], // Extract kelas for the blade template
             'spp' => $filterLabels['spp'],     // Extract spp for the blade template
